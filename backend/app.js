@@ -22,9 +22,29 @@ const allowedStatuses = new Set([
 const normalizeStatus = (status) =>
   typeof status === "string" ? status.trim().toUpperCase() : status;
 
+const getUniqueViolationMessage = (error) => {
+  const detail = typeof error.detail === "string" ? error.detail : "";
+  const message = typeof error.message === "string" ? error.message : "";
+  const combined = `${detail} ${message}`.toLowerCase();
+
+  if (combined.includes("phone_no")) {
+    return "Phone number already exists";
+  }
+
+  if (combined.includes("email")) {
+    return "Email already exists";
+  }
+
+  if (combined.includes("company_name")) {
+    return "Company name already exists";
+  }
+
+  return "Duplicate value";
+};
+
 const handleDbError = (res, error) => {
   if (error && error.code === "23505") {
-    return res.status(409).json({ error: "Duplicate value" });
+    return res.status(409).json({ error: getUniqueViolationMessage(error) });
   }
 
   console.error("Database error:", error);

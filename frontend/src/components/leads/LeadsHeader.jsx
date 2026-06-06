@@ -7,7 +7,7 @@ export function LeadsHeader({ onCreateLead }) {
       </div>
 
       <button
-        className="inline-flex h-11 items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-medium text-white transition hover:bg-slate-800"
+        className="inline-flex h-11 items-center justify-center rounded-xl bg-[#ff6b00] px-4 text-sm font-medium text-white transition hover:bg-[#e96100]"
         type="button"
         onClick={onCreateLead}
       >

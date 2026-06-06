@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { EMPTY_LEAD_FORM } from '../../constants/leads'
 
-export function LeadFormModal({ mode, lead, saving, onClose, onSubmit }) {
+export function LeadFormModal({ mode, lead, saving, error, onClose, onSubmit }) {
   const [formData, setFormData] = useState(EMPTY_LEAD_FORM)
 
   useEffect(() => {
@@ -57,6 +57,12 @@ export function LeadFormModal({ mode, lead, saving, onClose, onSubmit }) {
           </button>
         </div>
 
+        {error ? (
+          <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {error}
+          </div>
+        ) : null}
+
         <form className="grid grid-cols-1 gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
           <label className="grid gap-2 text-sm text-slate-700">
             Name
@@ -65,7 +71,7 @@ export function LeadFormModal({ mode, lead, saving, onClose, onSubmit }) {
               type="text"
               value={formData.name}
               onChange={handleChange('name')}
-              className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-500"
+              className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#ff6b00]"
             />
           </label>
 
@@ -75,7 +81,7 @@ export function LeadFormModal({ mode, lead, saving, onClose, onSubmit }) {
               type="email"
               value={formData.email}
               onChange={handleChange('email')}
-              className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-500"
+              className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#ff6b00]"
             />
           </label>
 
@@ -85,7 +91,7 @@ export function LeadFormModal({ mode, lead, saving, onClose, onSubmit }) {
               type="text"
               value={formData.phone_no}
               onChange={handleChange('phone_no')}
-              className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-500"
+              className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#ff6b00]"
             />
           </label>
 
@@ -95,7 +101,7 @@ export function LeadFormModal({ mode, lead, saving, onClose, onSubmit }) {
               type="text"
               value={formData.company_name}
               onChange={handleChange('company_name')}
-              className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-500"
+              className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#ff6b00]"
             />
           </label>
 
@@ -104,7 +110,7 @@ export function LeadFormModal({ mode, lead, saving, onClose, onSubmit }) {
             <select
               value={formData.status}
               onChange={handleChange('status')}
-              className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-slate-500"
+              className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-[#ff6b00]"
             >
               <option value="NEW">NEW</option>
               <option value="CONTACTED">CONTACTED</option>
@@ -120,24 +126,32 @@ export function LeadFormModal({ mode, lead, saving, onClose, onSubmit }) {
               rows="4"
               value={formData.notes}
               onChange={handleChange('notes')}
-              className="min-h-28 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-500"
+              className="min-h-28 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#ff6b00]"
             />
           </label>
 
           <div className="flex justify-end gap-3 md:col-span-2">
             <button
               type="button"
-              className="inline-flex h-11 items-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:border-slate-400"
+              className="inline-flex h-11 items-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-60"
               onClick={onClose}
+              disabled={saving}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="inline-flex h-11 items-center rounded-xl bg-slate-900 px-4 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-11 items-center rounded-xl bg-[#ff6b00] px-4 text-sm font-medium text-white transition hover:bg-[#e96100] disabled:cursor-not-allowed disabled:opacity-60"
               disabled={saving}
             >
-              {saving ? 'Saving...' : 'Save Lead'}
+              {saving ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  Saving...
+                </span>
+              ) : (
+                'Save Lead'
+              )}
             </button>
           </div>
         </form>

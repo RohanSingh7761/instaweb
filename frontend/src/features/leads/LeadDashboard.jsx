@@ -3,6 +3,7 @@ import { LeadsHeader } from '../../components/leads/LeadsHeader'
 import { LeadFormModal } from '../../components/leads/LeadFormModal'
 import { LeadsTable } from '../../components/leads/LeadsTable'
 import { LeadsToolbar } from '../../components/leads/LeadsToolbar'
+import { DeleteConfirmModal } from '../../components/leads/DeleteConfirmModal'
 import { useLeads } from '../../hooks/useLeads'
 
 function LeadDashboard() {
@@ -24,6 +25,9 @@ function LeadDashboard() {
   const [modalMode, setModalMode] = useState(null)
   const [activeLead, setActiveLead] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [modalError, setModalError] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleting, setDeleting] = useState(false)
   const [pageSize, setPageSize] = useState(10)
   const [currentPage, setCurrentPage] = useState(1)
 
@@ -81,23 +85,26 @@ function LeadDashboard() {
     setModalMode('create')
     setActiveLead(null)
     setError('')
+    setModalError('')
   }
 
   const openEditModal = (lead) => {
     setModalMode('edit')
     setActiveLead(lead)
     setError('')
+    setModalError('')
   }
 
   const closeModal = () => {
     setModalMode(null)
     setActiveLead(null)
     setSaving(false)
+    setModalError('')
   }
 
   const handleSubmit = async (payload) => {
     setSaving(true)
-    setError('')
+    setModalError('')
 
     try {
       if (modalMode === 'edit' && activeLead) {
@@ -108,23 +115,36 @@ function LeadDashboard() {
 
       closeModal()
     } catch (submitError) {
-      setError(submitError.message || 'Unable to save lead')
+      setModalError(submitError.message || 'Unable to save lead')
     } finally {
       setSaving(false)
     }
   }
 
   const handleDelete = async (leadId) => {
-    const confirmed = window.confirm('Delete this lead?')
-    if (!confirmed) return
+    const lead = leads.find((item) => item.id === leadId) || null
+    setDeleteTarget(lead)
+  }
 
+  const closeDeleteModal = () => {
+    setDeleteTarget(null)
+    setDeleting(false)
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+
+    setDeleting(true)
     setError('')
 
     try {
-      await deleteLead(leadId)
-      setSelectedIds((current) => current.filter((id) => id !== leadId))
+      console.log('Deleting lead:', deleteTarget)
+      await deleteLead(deleteTarget.id)
+      setSelectedIds((current) => current.filter((id) => id !== deleteTarget.id))
+      closeDeleteModal()
     } catch (deleteError) {
       setError(deleteError.message || 'Unable to delete lead')
+      setDeleting(false)
     }
   }
 
@@ -229,8 +249,18 @@ function LeadDashboard() {
           mode={modalMode}
           lead={modalMode === 'edit' ? activeLead : null}
           saving={saving}
+          error={modalError}
           onClose={closeModal}
           onSubmit={handleSubmit}
+        />
+      ) : null}
+
+      {deleteTarget ? (
+        <DeleteConfirmModal
+          lead={deleteTarget}
+          saving={deleting}
+          onClose={closeDeleteModal}
+          onConfirm={confirmDelete}
         />
       ) : null}
     </main>
