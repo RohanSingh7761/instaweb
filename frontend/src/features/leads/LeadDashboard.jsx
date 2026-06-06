@@ -176,6 +176,7 @@ function LeadDashboard() {
           isFilterOpen={filterOpen}
           onToggleFilter={() => setFilterOpen((current) => !current)}
           onStatusFilterChange={handleStatusChange}
+          onCloseFilter={() => setFilterOpen(false)}
         />
 
         {error ? (
