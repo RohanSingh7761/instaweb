@@ -8,10 +8,7 @@ const sql = neon(process.env.DATABASE_URL);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors({
-    origin: "https://instaweb-vert.vercel.app",
-    credentials: true
-}));
+app.use(cors());
 app.use(express.json());
 
 const allowedStatuses = new Set([
