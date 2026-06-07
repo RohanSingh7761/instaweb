@@ -4,11 +4,29 @@ const express = require("express");
 const cors = require("cors");
 const { neon } = require("@neondatabase/serverless");
 
-const sql = neon(process.env.DATABASE_URL);
-const app = express();
-const PORT = process.env.PORT || 3000;
+if (!process.env.DATABASE_URL) {
+  console.error("DATABASE_URL is missing");
+  process.exit(1);
+}
 
-app.use(cors());
+console.log("DATABASE_URL found");
+
+const sql = neon(process.env.DATABASE_URL);
+
+const app = express();
+const PORT = process.env.PORT || 8080;
+
+app.use(
+  cors({
+    origin: [
+      "https://instaweb-vert.vercel.app",
+      "http://localhost:5173",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 
 const allowedStatuses = new Set([
@@ -43,29 +61,67 @@ const getUniqueViolationMessage = (error) => {
 };
 
 const handleDbError = (res, error) => {
+  console.error("Database Error:", error);
+
   if (error && error.code === "23505") {
-    return res.status(409).json({ error: getUniqueViolationMessage(error) });
+    return res.status(409).json({
+      error: getUniqueViolationMessage(error),
+    });
   }
 
-  console.error("Database error:", error);
-  return res.status(500).json({ error: "Internal server error" });
+  return res.status(500).json({
+    error: error.message || "Internal server error",
+  });
 };
 
 app.get("/", (req, res) => {
-  res.json({ status: "ok" });
+  res.json({
+    status: "ok",
+    message: "Backend is running",
+  });
+});
+
+app.get("/health", async (req, res) => {
+  try {
+    await sql`SELECT 1`;
+
+    res.json({
+      status: "ok",
+      database: "connected",
+    });
+  } catch (err) {
+    console.error("Health Check Error:", err);
+
+    res.status(500).json({
+      status: "error",
+      message: err.message,
+    });
+  }
 });
 
 app.post("/api/leads", async (req, res) => {
-  const { name, email, phone_no, company_name, status, notes, created_date } =
-    req.body;
+  const {
+    name,
+    email,
+    phone_no,
+    company_name,
+    status,
+    notes,
+    created_date,
+  } = req.body;
+
   const normalizedStatus = normalizeStatus(status);
 
   if (!name || typeof name !== "string") {
-    return res.status(400).json({ error: "Name is required" });
+    return res.status(400).json({
+      error: "Name is required",
+    });
   }
 
   if (normalizedStatus && !allowedStatuses.has(normalizedStatus)) {
-    return res.status(400).json({ error: "Invalid status" });
+    return res.status(400).json({
+      error: "Invalid status",
+    });
   }
 
   try {
@@ -82,31 +138,32 @@ app.post("/api/leads", async (req, res) => {
           ${notes || null},
           COALESCE(${created_date || null}, NOW())
         )
-      RETURNING id, name, email, phone_no, company_name, status, notes, created_date
+      RETURNING *
     `;
 
-    return res.status(201).json(result[0]);
+    res.status(201).json(result[0]);
   } catch (error) {
-    return handleDbError(res, error);
+    handleDbError(res, error);
   }
 });
 
 app.get("/api/leads", async (req, res) => {
   try {
     const result = await sql`
-      SELECT id, name, email, phone_no, company_name, status, notes, created_date
+      SELECT *
       FROM leads
       ORDER BY created_date DESC NULLS LAST, id DESC
     `;
 
-    return res.json(result);
+    res.json(result);
   } catch (error) {
-    return handleDbError(res, error);
+    handleDbError(res, error);
   }
 });
 
 app.get("/api/leads/search", async (req, res) => {
-  const searchTerm = typeof req.query.q === "string" ? req.query.q.trim() : "";
+  const searchTerm =
+    typeof req.query.q === "string" ? req.query.q.trim() : "";
 
   if (!searchTerm) {
     return res.json([]);
@@ -116,7 +173,7 @@ app.get("/api/leads/search", async (req, res) => {
 
   try {
     const result = await sql`
-      SELECT id, name, email, phone_no, company_name, status, notes, created_date
+      SELECT *
       FROM leads
       WHERE name ILIKE ${pattern}
         OR email ILIKE ${pattern}
@@ -124,19 +181,30 @@ app.get("/api/leads/search", async (req, res) => {
       ORDER BY created_date DESC NULLS LAST, id DESC
     `;
 
-    return res.json(result);
+    res.json(result);
   } catch (error) {
-    return handleDbError(res, error);
+    handleDbError(res, error);
   }
 });
 
 app.put("/api/leads/:id", async (req, res) => {
   const { id } = req.params;
-  const { name, email, phone_no, company_name, status, notes } = req.body;
+
+  const {
+    name,
+    email,
+    phone_no,
+    company_name,
+    status,
+    notes,
+  } = req.body;
+
   const normalizedStatus = normalizeStatus(status);
 
   if (normalizedStatus && !allowedStatuses.has(normalizedStatus)) {
-    return res.status(400).json({ error: "Invalid status" });
+    return res.status(400).json({
+      error: "Invalid status",
+    });
   }
 
   try {
@@ -150,16 +218,18 @@ app.put("/api/leads/:id", async (req, res) => {
         status = COALESCE(${normalizedStatus || null}, status),
         notes = COALESCE(${notes || null}, notes)
       WHERE id = ${id}
-      RETURNING id, name, email, phone_no, company_name, status, notes, created_date
+      RETURNING *
     `;
 
     if (!result.length) {
-      return res.status(404).json({ error: "Lead not found" });
+      return res.status(404).json({
+        error: "Lead not found",
+      });
     }
 
-    return res.json(result[0]);
+    res.json(result[0]);
   } catch (error) {
-    return handleDbError(res, error);
+    handleDbError(res, error);
   }
 });
 
@@ -174,15 +244,17 @@ app.delete("/api/leads/:id", async (req, res) => {
     `;
 
     if (!result.length) {
-      return res.status(404).json({ error: "Lead not found" });
+      return res.status(404).json({
+        error: "Lead not found",
+      });
     }
 
-    return res.status(204).send();
+    res.status(204).send();
   } catch (error) {
-    return handleDbError(res, error);
+    handleDbError(res, error);
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
 });
