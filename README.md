@@ -22,7 +22,6 @@ Backend (create a `.env` file in `backend/`):
 
 ```
 DATABASE_URL=postgresql://<user>:<password>@<host>:<port>/<db>
-PORT=3000
 ```
 
 Frontend (create or edit `frontend/.env`):
